@@ -138,7 +138,7 @@
                         "autoUpgradeMinorVersion": true,
                         "settings": {
                            "fileUris": [
-                            "https://raw.githubusercontent.com/phanikumarsharma/rdmisaasofferingtemplate/master/scripts/New-RdmiMgmtSetup.ps1"
+                            "https://raw.githubusercontent.com/phanikumarsharma/TestRepo/master/Samplescript.ps1"
                         ],
                         "commandToExecute": "[concat('powershell.exe -ExecutionPolicy Unrestricted -File Samplescript.ps1', ' -SubscriptionId \"', variables('subscriptionId'), '\"',' ',  ' -ResourceGroupName \"', variables('resourcegroupname'), '\"',' ', ' -Location \"', variables('Location'), '\"',' ',' -UserName \"', parameters('AzureLoginID'), '\"',' ',' -Password \"', parameters('AzureLoginPassword'), '\"')]"
                         }
