@@ -41,7 +41,7 @@
     "variables": {
         "nicName": "myVMNic",
         "addressPrefix": "10.0.0.0/16",
-        "vmsubscriptionId": "[subscription().subscriptionId]",
+        "subscriptionId":"[subscription().subscriptionId]",
         "subnetName": "Subnet",
         "subnetPrefix": "10.0.0.0/24",
         "subnetRef": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('virtualNetworkName'), variables('subnetName'))]",
