@@ -49,7 +49,7 @@
         "virtualNetworkName": "MyVNET",
         "publicIPAddressName": "myPublicIP",
         "dnsNameForPublicIP": "[uniqueString(resourceGroup().name)]",
-        "_artifactsLocation": "https://raw.githubusercontent.com/sreenathakk/testrepository/master/Create%20new%20RDmi%20tenant/Scripts/",
+        "_artifactsLocation": "https://raw.githubusercontent.com/phanikumarsharma/TestRepo/master/scripts",
         "adminUsername": "vmadmin",
         "adminPassword": "Welcome@12345",
         "resourcegroupname": "[resourceGroup().name]",
