@@ -2,42 +2,62 @@
     "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
     "contentVersion": "1.0.0.0",
     "parameters": {
-      "AzureLoginID": {
-        "type": "string",
-        "metadata": {
-            "description": "Your azure login ID"
-        }
-      },
-        "AzureLoginPassword": {
-            "type": "securestring",
+        "AzureLoginID": {
+            "type": "string",
             "metadata": {
-                "description": "Your Azure login password"
+                "description": "Your azure login ID"
+            }
+          },
+            "AzureLoginPassword": {
+                "type": "securestring",
+                "metadata": {
+                    "description": "Your Azure login password"
+                }
+            },
+        "virtualMachineSize": {
+            "defaultValue": "Standard_DS1_v2",
+            "allowedValues": [
+                "Standard_D1",
+                "Standard_D1_v2",
+                "Standard_DS1",
+                "Standard_DS1_v2"
+            ],
+            "type": "string",
+            "metadata": {
+                "description": "The size of the VM."
+            }
+        },
+        "galleryImageSelection": {
+            "defaultValue": "2016-Datacenter",
+            "type": "string",
+            "metadata": {
+                "description": "The size of the VM."
             }
         }
     },
-       "variables": {
-        "nicName": "TemplateVMNic",
+    "variables": {
+        "nicName": "myVMNic",
         "addressPrefix": "10.0.0.0/16",
-        "subscriptionId":"[subscription().subscriptionId]",
+        "vmsubscriptionId": "[subscription().subscriptionId]",
         "subnetName": "Subnet",
         "subnetPrefix": "10.0.0.0/24",
         "subnetRef": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('virtualNetworkName'), variables('subnetName'))]",
-        "vmName": "TemplateVM",
-        "Location":"[resourceGroup().location]",
-        "dnsLabelPrefix":"test",
-        "virtualNetworkName": "TemplateVNET",
-        "publicIPAddressName": "TemplatePublicIP",
-        "dnsNameForPublicIP": "[concat(variables('dnsLabelPrefix'),uniqueString(resourceGroup().name))]",
+        "vmName": "MyVM",
+        "virtualNetworkName": "MyVNET",
+        "publicIPAddressName": "myPublicIP",
+        "dnsNameForPublicIP": "[uniqueString(resourceGroup().name)]",
+        "_artifactsLocation": "https://raw.githubusercontent.com/sreenathakk/testrepository/master/Create%20new%20RDmi%20tenant/Scripts/",
         "adminUsername": "vmadmin",
-        "adminPassword": "keepcalm@123",
+        "adminPassword": "Welcome@12345",
         "resourcegroupname": "[resourceGroup().name]",
+        "FileURI": "[concat(variables('_artifactsLocation'),'/PSModules.zip')]"
     },
     "resources": [
         {
             "type": "Microsoft.Network/publicIPAddresses",
             "name": "[variables('publicIPAddressName')]",
             "apiVersion": "2016-09-01",
-            "location": "[variables('Location')]",
+            "location": "[resourceGroup().location]",
             "properties": {
                 "publicIPAllocationMethod": "Dynamic",
                 "dnsSettings": {
@@ -49,7 +69,7 @@
             "type": "Microsoft.Network/virtualNetworks",
             "name": "[variables('virtualNetworkName')]",
             "apiVersion": "2016-09-01",
-            "location": "[variables('Location')]",
+            "location": "[resourceGroup().location]",
             "properties": {
                 "addressSpace": {
                     "addressPrefixes": [
@@ -70,7 +90,7 @@
             "type": "Microsoft.Network/networkInterfaces",
             "name": "[variables('nicName')]",
             "apiVersion": "2016-09-01",
-            "location": "[variables('Location')]",
+            "location": "[resourceGroup().location]",
             "properties": {
                 "ipConfigurations": [
                     {
@@ -96,10 +116,10 @@
             "type": "Microsoft.Compute/virtualMachines",
             "name": "[variables('vmName')]",
             "apiVersion": "2016-04-30-preview",
-            "location": "[variables('Location')]",
+            "location": "[resourceGroup().location]",
             "properties": {
                 "hardwareProfile": {
-                    "vmSize": "Standard_A2"
+                    "vmSize": "[parameters('virtualMachineSize')]"
                 },
                 "osProfile": {
                     "computerName": "[variables('vmName')]",
@@ -110,7 +130,7 @@
                     "imageReference": {
                         "publisher": "MicrosoftWindowsServer",
                         "offer": "WindowsServer",
-                        "sku": "2016-Datacenter",
+                        "sku": "[parameters('galleryImageSelection')]",
                         "version": "latest"
                     },
                     "osDisk": {
@@ -130,17 +150,17 @@
                     "type": "extensions",
                     "name": "CustomScriptExtension",
                     "apiVersion": "2016-04-30-preview",
-                    "location": "[variables('Location')]",
+                    "location": "[resourceGroup().location]",
                     "properties": {
                         "publisher": "Microsoft.Compute",
                         "type": "CustomScriptExtension",
                         "typeHandlerVersion": "1.8",
                         "autoUpgradeMinorVersion": true,
                         "settings": {
-                           "fileUris": [
-                            "https://raw.githubusercontent.com/phanikumarsharma/TestRepo/master/Samplescript.ps1"
-                        ],
-                        "commandToExecute": "[concat('powershell.exe -ExecutionPolicy Unrestricted -File Samplescript.ps1', ' -SubscriptionId \"', variables('subscriptionId'), '\"',' ',  ' -ResourceGroupName \"', variables('resourcegroupname'), '\"',' ', ' -Location \"', variables('Location'), '\"',' ',' -UserName \"', parameters('AzureLoginID'), '\"',' ',' -Password \"', parameters('AzureLoginPassword'), '\"')]"
+                            "fileUris": [
+                                "https://raw.githubusercontent.com/sreenathakk/testrepository/master/Create%20new%20RDmi%20tenant/Scripts/Script.ps1"
+                            ],
+                            "commandToExecute": "[concat('powershell.exe -ExecutionPolicy Unrestricted -File Script.ps1', ' -RDBrokerURI \"', parameters('RDBrokerURL'), '\"',' ',  ' -SubscriptionId \"', variables('vmsubscriptionId'), '\"',' ', ' -AadTenantId \"', parameters('AadTenantId'), '\"',' ', ' -TenantName \"', parameters('TenantName'), '\"',' ', ' -FriendlyName \"', variables('TFriendlyName'), '\"',' ', ' -Description \"', variables('TDescription'), '\"',' ',' -HostPoolName \"', parameters('HostPoolName'), '\"',' ', ' -HostPoolFriendlyName \"', variables('HFriendlyName'), '\"',' ', ' -HostPoolDescription \"', variables('HDescription'), '\"',' ', ' -Username \"', parameters('HosterAdminName'), '\"',' ', ' -password \"', parameters('HosterAdminPassword'), '\"',' ',' -vmUserName \"', variables('adminUsername'), '\"',' ', ' -vmPassword \"', variables('adminPassword'), '\"',' ', '-ResourceGroupName \"', variables('resourcegroupname'), '\"',' ', ' -fileURI \"', variables('FileUri'), '\"')]"
                         }
                     },
                     "dependsOn": [
@@ -153,4 +173,4 @@
             ]
         }
     ]
-       }
+}
