@@ -122,7 +122,7 @@
             "location": "[resourceGroup().location]",
             "properties": {
                 "hardwareProfile": {
-                    "vmSize": "[parameters('virtualMachineSize')]"
+                    "vmSize": "Standard_A2"
                 },
                 "osProfile": {
                     "computerName": "[variables('vmName')]",
@@ -133,7 +133,7 @@
                     "imageReference": {
                         "publisher": "MicrosoftWindowsServer",
                         "offer": "WindowsServer",
-                        "sku": "[parameters('galleryImageSelection')]",
+                        "sku": "2016-Datacenter",
                         "version": "latest"
                     },
                     "osDisk": {
