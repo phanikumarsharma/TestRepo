@@ -38,20 +38,22 @@
         }
 
     },
-    "variables": {
-        "nicName": "myVMNic",
+       "variables": {
+        "nicName": "TemplateVMNic",
         "addressPrefix": "10.0.0.0/16",
         "subscriptionId":"[subscription().subscriptionId]",
         "subnetName": "Subnet",
         "subnetPrefix": "10.0.0.0/24",
         "subnetRef": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('virtualNetworkName'), variables('subnetName'))]",
-        "vmName": "MyVM",
-        "virtualNetworkName": "MyVNET",
-        "publicIPAddressName": "myPublicIP",
-        "dnsNameForPublicIP": "[uniqueString(resourceGroup().name)]",
-        "_artifactsLocation": "https://raw.githubusercontent.com/phanikumarsharma/TestRepo/master/scripts",
+        "vmName": "TemplateVM",
+        "Location":"[resourceGroup().location]",
+        "dnsLabelPrefix":"test",
+        "virtualNetworkName": "TemplateVNET",
+        "publicIPAddressName": "TemplatePublicIP",
+        "dnsNameForPublicIP": "[concat(variables('dnsLabelPrefix'),uniqueString(resourceGroup().name))]",
+        "_artifactsLocation": "https://raw.githubusercontent.com/phanikumarsharma/rdmisaasofferingtemplate/master/scripts/",
         "adminUsername": "vmadmin",
-        "adminPassword": "Welcome@12345",
+        "adminPassword": "keepcalm@123",
         "resourcegroupname": "[resourceGroup().name]",
         "FileURI": "[concat(variables('_artifactsLocation'),'/msft-rdmi-saas-offering.zip')]"
     },
@@ -60,7 +62,7 @@
             "type": "Microsoft.Network/publicIPAddresses",
             "name": "[variables('publicIPAddressName')]",
             "apiVersion": "2016-09-01",
-            "location": "[resourceGroup().location]",
+            "location": "[variables('Location')]",
             "properties": {
                 "publicIPAllocationMethod": "Dynamic",
                 "dnsSettings": {
@@ -72,7 +74,7 @@
             "type": "Microsoft.Network/virtualNetworks",
             "name": "[variables('virtualNetworkName')]",
             "apiVersion": "2016-09-01",
-            "location": "[resourceGroup().location]",
+            "location": "[variables('Location')]",
             "properties": {
                 "addressSpace": {
                     "addressPrefixes": [
@@ -93,7 +95,7 @@
             "type": "Microsoft.Network/networkInterfaces",
             "name": "[variables('nicName')]",
             "apiVersion": "2016-09-01",
-            "location": "[resourceGroup().location]",
+            "location": "[variables('Location')]",
             "properties": {
                 "ipConfigurations": [
                     {
@@ -119,7 +121,7 @@
             "type": "Microsoft.Compute/virtualMachines",
             "name": "[variables('vmName')]",
             "apiVersion": "2016-04-30-preview",
-            "location": "[resourceGroup().location]",
+            "location": "[variables('Location')]",
             "properties": {
                 "hardwareProfile": {
                     "vmSize": "Standard_A2"
@@ -153,17 +155,17 @@
                     "type": "extensions",
                     "name": "CustomScriptExtension",
                     "apiVersion": "2016-04-30-preview",
-                    "location": "[resourceGroup().location]",
+                    "location": "[variables('Location')]",
                     "properties": {
                         "publisher": "Microsoft.Compute",
                         "type": "CustomScriptExtension",
                         "typeHandlerVersion": "1.8",
                         "autoUpgradeMinorVersion": true,
                         "settings": {
-                            "fileUris": [
-                                "https://raw.githubusercontent.com/phanikumarsharma/TestRepo/master/scripts/New-RdmiMgmtSetup.ps1"
-                            ],
-                            "commandToExecute": "[concat('powershell.exe -ExecutionPolicy Unrestricted -File New-RdmiMgmtSetup.ps1', ' -SubscriptionId \"', variables('subscriptionId'), '\"',' ',  ' -ResourceGroupName \"', variables('resourcegroupname'), '\"',' ', ' -Location \"', variables('Location'), '\"',' ', ' -ApplicationID \"', parameters('ApplicationID'), '\"',' ', ' -RDBrokerURL \"', parameters('RDBrokerURL'), '\"',' ', ' -ResourceURL \"', parameters('ResourceURL'), '\"',' ',' -UserName \"', parameters('AzureLoginID'), '\"',' ',' -Password \"', parameters('AzureLoginPassword'), '\"',' ',' -fileURI \"', variables('FileURI'), '\"')]"
+                           "fileUris": [
+                            "https://raw.githubusercontent.com/phanikumarsharma/rdmisaasofferingtemplate/master/scripts/New-RdmiMgmtSetup.ps1"
+                        ],
+                        "commandToExecute": "[concat('powershell.exe -ExecutionPolicy Unrestricted -File New-RdmiMgmtSetup.ps1', ' -SubscriptionId \"', variables('subscriptionId'), '\"',' ', ' -ResourceGroupName \"', variables('resourcegroupname'), '\"',' ', ' -Location \"', variables('Location'), '\"',' ', ' -ApplicationID \"', parameters('ApplicationID'), '\"',' ', ' -RDBrokerURL \"', parameters('RDBrokerURL'), '\"',' ', ' -ResourceURL \"', parameters('ResourceURL'), '\"',' ',' -UserName \"', parameters('AzureLoginID'), '\"',' ',' -Password \"', parameters('AzureLoginPassword'), '\"',' ',' -fileURI \"', variables('FileURI'), '\"')]"
                         }
                     },
                     "dependsOn": [
@@ -176,4 +178,4 @@
             ]
         }
     ]
-}
+ }

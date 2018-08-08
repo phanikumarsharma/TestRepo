@@ -82,7 +82,20 @@ Param(
     [Parameter(Mandatory = $False)]
     [ValidateNotNullOrEmpty()]
     [string]$ApiAppExtractionPath = ".\msft-rdmi-saas-api\msft-rdmi-saas-api.zip"
+
+
 )
+
+function Disable-ieESC {
+    $AdminKey = "HKLM:\SOFTWARE\Microsoft\Active Setup\Installed Components\{A509B1A7-37EF-4b3f-8CFC-4F3A74704073}"
+    $UserKey = "HKLM:\SOFTWARE\Microsoft\Active Setup\Installed Components\{A509B1A8-37EF-4b3f-8CFC-4F3A74704073}"
+    Set-ItemProperty -Path $AdminKey -Name "IsInstalled" -Value 0
+    Set-ItemProperty -Path $UserKey -Name "IsInstalled" -Value 0
+    Stop-Process -Name Explorer
+    Write-Host "IE Enhanced Security Configuration (ESC) has been disabled." -ForegroundColor Green
+}
+
+Disable-ieESC
 
 try
 {
@@ -141,9 +154,7 @@ try
         Write-Output "Creating the resource group $ResourceGroupName ...";
         New-AzureRmResourceGroup -Name $ResourceGroupName -Location "$Location" -ErrorAction Stop 
         Write-Output "Resource group with name $ResourceGroupName has been created"
-    }
-    elseif($ResourceGroup)
-        {
+
             try
             {
                 ##################################### APPSERVICE PLAN #####################################
@@ -362,13 +373,27 @@ try
             Write-Output "Web URL : https://$WebUrl"
        }
     }
-    Set-Location $CodeBitPath
 
-    start-job -ScriptBlock{
-    param($SubscriptionId,$UserName,$Password,$ResourceGroupName)
-    PowerShell -NoProfile -ExecutionPolicy Bypass -Command "& 'C:\msft-rdmi-saas-offering\msft-rdmi-saas-offering\RemoveRG.ps1' -SubscriptionId $SubscriptionId -UserName $UserName -Password $Password -ResourceGroupName $ResourceGroupName"
-    } -ArgumentList($SubscriptionId,$UserName,$Password,$ResourceGroupName)
-}
+    New-PSDrive -Name RemoveRG -PSProvider FileSystem -Root "C:\msft-rdmi-saas-offering\msft-rdmi-saas-offering" | Out-Null
+@"
+<RemoveRG>
+<SubscriptionId>$SubscriptionId</SubscriptionId>
+<UserName>$UserName</UserName>
+<Password>$Password</Password>
+<ResourceGroupName>$ResourceGroupName</ResourceGroupName>
+</RemoveRG>
+"@| Out-File -FilePath RemoveRG:\RemoveRG.xml -Force
+
+     $jobname = "RemoveResourceGroup"
+     $script =  "C:\msft-rdmi-saas-offering\msft-rdmi-saas-offering\RemoveRG.ps1"
+     $repeat = (New-TimeSpan -Minutes 1)
+     $action = New-ScheduledTaskAction –Execute "$pshome\powershell.exe" -Argument  "-ExecutionPolicy Bypass -Command ${script}"
+     $duration = (New-TimeSpan -Days 1)
+     $trigger = New-ScheduledTaskTrigger -Once -At (Get-Date).Date -RepetitionInterval $repeat -RepetitionDuration $duration
+     $settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -StartWhenAvailable -RunOnlyIfNetworkAvailable -DontStopOnIdleEnd
+     Register-ScheduledTask -TaskName $jobname -Action $action -Trigger $trigger -RunLevel Highest -User "system" -Settings $settings
+
+   }
 catch [Exception]
 {
     Write-Output $_.Exception.Message
