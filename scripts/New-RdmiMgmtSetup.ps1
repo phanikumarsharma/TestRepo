@@ -1,11 +1,15 @@
 ﻿<#
+
 .Synposys
 Deploy a new RDmi Management Console in Azure
+
 .Description
 This script is used to provision a new RDmi Management Web Portal in Azure. It creates
 two App services- Api and App. At End of this script, it will generate public URL of Web Portal.
+
 .Permission
 Administrator
+
 #>
 
 
@@ -61,7 +65,7 @@ Param(
 
     [Parameter(Mandatory = $False)]
     [ValidateNotNullOrEmpty()]
-    [string] $CodeBitPath= "C:\msft-rdmi-saas-offering",
+    [string] $CodeBitPath= "C:\msft-rdmi-saas-offering\msft-rdmi-saas-offering",
    
     [Parameter(Mandatory = $False)]
     [ValidateNotNullOrEmpty()]
@@ -78,6 +82,8 @@ Param(
     [Parameter(Mandatory = $False)]
     [ValidateNotNullOrEmpty()]
     [string]$ApiAppExtractionPath = ".\msft-rdmi-saas-api\msft-rdmi-saas-api.zip"
+
+
 )
 
 function Disable-ieESC {
@@ -108,7 +114,7 @@ try
         Write-Output "AzureRM module Not Available. Installing AzureRM Module"
         Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force
         Install-Module Azure -Force
-        Install-Module AzureRm -Force
+        Install-Module AzureRm -Force 
         Write-Output "Installed AzureRM Module successfully"
     } 
     else
@@ -120,7 +126,9 @@ try
 
     Write-Output "Importing AzureRm Module.."
     Import-Module AzureRm -ErrorAction SilentlyContinue -Force
-
+    Import-Module AzureRM.profile
+    Import-Module AzureRM.resources
+    Import-Module AzureRM.Compute
     #Login to AzureRM Account
 
     Write-Output "Login Into Azure RM.."
@@ -140,31 +148,32 @@ try
     # Create a resource group.
 
     Write-Output "Checking if the resource group $ResourceGroupName exists";
-    $ResourceGroup = Get-AzureRmResourceGroup -Name $ResourceGroupName -ErrorAction SilentlyContinue
-    if (! $ResourceGroup)
+    $ResourceGroups = Get-AzureRmResourceGroup -Name $ResourceGroupName -ErrorAction SilentlyContinue
+    if ($ResourceGroupName -notin $ResourceGroups.ResourceGroupName)
     {
         Write-Output "Creating the resource group $ResourceGroupName ...";
         New-AzureRmResourceGroup -Name $ResourceGroupName -Location "$Location" -ErrorAction Stop 
         Write-Output "Resource group with name $ResourceGroupName has been created"
-    }
-    elseif($ResourceGroup)
-    {
-        try
-        {
-            ##################################### APPSERVICE PLAN #####################################
-               
-            #create a appservice plan
-        
-            Write-Output "Creating AppServicePlan in resource group  $ResourceGroupName ...";
-            New-AzureRmAppServicePlan -Name $AppServicePlan -Location $Location -ResourceGroupName $ResourceGroupName -Tier Standard
-            $AppPlan = Get-AzureRmAppServicePlan -Name $AppServicePlan -ResourceGroupName $ResourceGroupName
-            Write-Output "AppServicePlan with name $AppServicePlan has been created"
 
-        }
-        catch [Exception]
-        {
-            Write-Output $_.Exception.Message
-        }
+    }
+    else
+    {
+            try
+            {
+                ##################################### APPSERVICE PLAN #####################################
+               
+                #create a appservice plan
+        
+                Write-Output "Creating AppServicePlan in resource group  $ResourceGroupName ...";
+                New-AzureRmAppServicePlan -Name $AppServicePlan -Location $Location -ResourceGroupName $ResourceGroupName -Tier Standard
+                $AppPlan = Get-AzureRmAppServicePlan -Name $AppServicePlan -ResourceGroupName $ResourceGroupName
+                Write-Output "AppServicePlan with name $AppServicePlan has been created"
+
+            }
+            catch [Exception]
+            {
+                Write-Output $_.Exception.Message
+            }
 
         if($AppServicePlan)
         {
@@ -270,7 +279,7 @@ try
                                     "ResourceUrl" = "$ResourceURL";
                                     "RedirectURI" = "https://"+"$WebUrl"+"/";
                                     }
-                $Redirecturl1="http://"+"$WebUrl"+"/"
+                $Redirecturl1="https://"+"$WebUrl"+"/"
                 $Redirecturl2="https://login.microsoftonline.com/common/oauth2/logout?post_logout_redirect_uri="
                 $ADapplication=Get-AzureRmADApplication -ApplicationId $ApplicationID
                 $add=$ADapplication.ReplyUrls.Add($Redirecturl1)
@@ -312,7 +321,7 @@ try
                 #Change the Url in the main.bundle.js file with the with ApiURL
 
                 Write-Output "Updating the Url in main.bundle.js file with Api-app Url"
-                (Get-Content $MainbundlePath).replace( "[api_url]", "http://"+$ApiUrl) | Set-Content $MainbundlePath
+                (Get-Content $MainbundlePath).replace( "[api_url]", "https://"+$ApiUrl) | Set-Content $MainbundlePath
 
                 #Get publishing profile from web app
                 
@@ -363,17 +372,31 @@ try
                 Write-Output $_.Exception.Message
             }
 
-            Write-Output "Api URL : http://$ApiUrl"
-            Write-Output "Web URL : http://$WebUrl"
+            Write-Output "Api URL : https://$ApiUrl"
+            Write-Output "Web URL : https://$WebUrl"
        }
     }
-    Start-Job -ScriptBlock{
-    param($SubscriptionId,$UserName,$Password,$ResourceGroupName)
 
-    PowerShell -NoProfile -ExecutionPolicy Bypass -Command "& 'C:\msft-rdmi-saas-offering\RemoveRG.ps1' -SubscriptionId $SubscriptionId -ResourceGroupName $ResourceGroupName -UserName $UserName -Password $Password"
+    New-PSDrive -Name RemoveRG -PSProvider FileSystem -Root "C:\msft-rdmi-saas-offering\msft-rdmi-saas-offering" | Out-Null
+@"
+<RemoveRG>
+<SubscriptionId>$SubscriptionId</SubscriptionId>
+<UserName>$UserName</UserName>
+<Password>$Password</Password>
+<ResourceGroupName>$ResourceGroupName</ResourceGroupName>
+</RemoveRG>
+"@| Out-File -FilePath RemoveRG:\RemoveRG.xml -Force
 
-    } -ArgumentList($SubscriptionId,$UserName,$Password,$ResourceGroupName)
-}
+     $jobname = "RemoveResourceGroup"
+     $script =  "C:\msft-rdmi-saas-offering\msft-rdmi-saas-offering\RemoveRG.ps1"
+     $repeat = (New-TimeSpan -Minutes 1)
+     $action = New-ScheduledTaskAction –Execute "$pshome\powershell.exe" -Argument  "-ExecutionPolicy Bypass -Command ${script}"
+     $duration = (New-TimeSpan -Days 1)
+     $trigger = New-ScheduledTaskTrigger -Once -At (Get-Date).Date -RepetitionInterval $repeat -RepetitionDuration $duration
+     $settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -StartWhenAvailable -RunOnlyIfNetworkAvailable -DontStopOnIdleEnd
+     Register-ScheduledTask -TaskName $jobname -Action $action -Trigger $trigger -RunLevel Highest -User "system" -Settings $settings
+
+   }
 catch [Exception]
 {
     Write-Output $_.Exception.Message

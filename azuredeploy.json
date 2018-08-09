@@ -2,178 +2,158 @@
     "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
     "contentVersion": "1.0.0.0",
     "parameters": {
-        "ApplicationID":{
-            "type": "string",
-            "metadata": {
-                "description":"Application ID to change in Application settings for Api App"
-            }
-        },
-        "RDBrokerURL":{
-            "type": "string",
-            "metadata": {
-                "description": "RD Broker URL to change in Application settings for Api App"
-            }
-        },
-        "ResourceURL":{
-            "type": "string",
-            "metadata": {
-                "description":"Resource URL to change in Application settings for Api App"
-            }
-        },
-        "AzureLoginID":{
-            "type": "string",
-            "metadata": {
-                "description": "UserName of the Azure Account"
-            }
-        },
-        "AzurePassword": { 
-        "type": "securestring",
+      "ApplicationID":
+      {
+        "type": "string",
         "metadata": {
-            "description": "Password of the Azure Account"
-            }
-        },
-        "StorageAccountType": {
-            "type": "string",
-            "defaultValue": "Standard_LRS",
-            "allowedValues": [
-                "Standard_LRS",
-                "Standard_GRS",
-                "Standard_ZRS",
-                "Premium_LRS"
-            ],
+          "description":"Application ID / Client ID of the infrastructure.  Ex: 574ee204-xx91-4ac5-xx7a-5a6a4e2784e9"
+        }
+      },
+      "RDBrokerURL":
+      {
+        "type": "string",
+        "metadata": {
+          "description":"RDBroker URL of the infrastructure.   Ex: https://rdbroker-uiyyft4gnswme.azurewebsites.net"
+        }
+      },
+      "ResourceURL":
+      {
+        "type": "string",
+        "metadata": {
+          "description":"Resource URL of the infrastructure.  Ex: https://contoso.onmicrosoft.com/RDInframsftrdmisaasf658465e2b4948fe85e"
+        }
+      },
+
+      "AzureLoginID": {
+        "type": "string",
+        "metadata": {
+            "description": "Your azure login ID"
+        }
+      },
+        "AzureLoginPassword": {
+            "type": "securestring",
             "metadata": {
-                "description": "Storage Account type"
+                "description": "Your Azure login password"
             }
         }
-    },
-    "variables": {
-        "AdminUsername":"vmadmin",
-        "AdminPassword":"keepcalm@123",
-        "Location":"[resourceGroup().location]",
-        "PublicIP":"myPublicIPAddress",
-        "vNet":"myVNet",
-        "Nic":"myNic",  
-        "vnetID": "[resourceId('Microsoft.Network/virtualNetworks','myVNet')]",
-        "subnetRef": "[concat(variables('vnetID'),'/subnets/mySubnet')]",
-        "StorageAccountName": "[concat('mystrg',uniquestring(resourceGroup().id))]",
-        "ResourceGroup":"[resourceGroup().name]",
-        "vName" : "myVM",
-        "dnsname": "[concat('mydns',uniquestring(resourceGroup().id))]",
-        "_artifactsLocation": "https://raw.githubusercontent.com/prasanth123n/New-rdmi-saas-offering/master/Scripts/",
-        "FileURI": "[concat(variables('_artifactsLocation'),'/msft-rdmi-saas-offering.zip')]",
-        "DscName": "CustomScriptExtension",
-        "SubscriptionId":"[subscription().subscriptionId]"
 
+    },
+       "variables": {
+        "nicName": "TemplateVMNic",
+        "addressPrefix": "10.0.0.0/16",
+        "subscriptionId":"[subscription().subscriptionId]",
+        "subnetName": "Subnet",
+        "subnetPrefix": "10.0.0.0/24",
+        "subnetRef": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('virtualNetworkName'), variables('subnetName'))]",
+        "vmName": "TemplateVM",
+        "Location":"[resourceGroup().location]",
+        "dnsLabelPrefix":"test",
+        "virtualNetworkName": "TemplateVNET",
+        "publicIPAddressName": "TemplatePublicIP",
+        "dnsNameForPublicIP": "[concat(variables('dnsLabelPrefix'),uniqueString(resourceGroup().name))]",
+        "_artifactsLocation": "https://raw.githubusercontent.com/phanikumarsharma/rdmisaasofferingtemplate/master/scripts/",
+        "adminUsername": "vmadmin",
+        "adminPassword": "keepcalm@123",
+        "resourcegroupname": "[resourceGroup().name]",
+        "FileURI": "[concat(variables('_artifactsLocation'),'/msft-rdmi-saas-offering.zip')]"
     },
     "resources": [
         {
-            "type": "Microsoft.Storage/storageAccounts",
-            "name": "[variables('StorageAccountName')]",
-            "apiVersion": "2016-01-01",
-            "location": "[variables('Location')]",
-            "sku": {
-              "name": "[parameters('StorageAccountType')]"
-            },
-            "kind": "Storage",
-            "properties": {}
-        },
-        {
-            "apiVersion": "2016-03-30",
             "type": "Microsoft.Network/publicIPAddresses",
-            "name": "[variables('PublicIP')]",
+            "name": "[variables('publicIPAddressName')]",
+            "apiVersion": "2016-09-01",
             "location": "[variables('Location')]",
             "properties": {
                 "publicIPAllocationMethod": "Dynamic",
                 "dnsSettings": {
-                    "domainNameLabel": "[variables('dnsname')]"
+                    "domainNameLabel": "[variables('dnsNameForPublicIP')]"
                 }
             }
         },
         {
-            "apiVersion": "2016-03-30",
             "type": "Microsoft.Network/virtualNetworks",
-            "name": "[variables('vNet')]",
+            "name": "[variables('virtualNetworkName')]",
+            "apiVersion": "2016-09-01",
             "location": "[variables('Location')]",
             "properties": {
-            "addressSpace": { "addressPrefixes": [ "10.0.0.0/16" ] },
-            "subnets": [
-                {
-                "name": "mySubnet",
-                "properties": { "addressPrefix": "10.0.0.0/24" }
-                }
-            ]
-            }
-        },
-        {
-            "apiVersion": "2016-03-30",
-            "type": "Microsoft.Network/networkInterfaces",
-            "name": "[variables('Nic')]",
-            "location": "[variables('Location')]",
-            "dependsOn": [
-            "[resourceId('Microsoft.Network/publicIPAddresses/', variables('PublicIP'))]",
-            "[variables('vnetID')]"
-            ],
-            "properties": {
-                "ipConfigurations": [
+                "addressSpace": {
+                    "addressPrefixes": [
+                        "[variables('addressPrefix')]"
+                    ]
+                },
+                "subnets": [
                     {
-                        "name": "ipconfig1",
+                        "name": "[variables('subnetName')]",
                         "properties": {
-                            "privateIPAllocationMethod": "Dynamic",
-                            "publicIPAddress": { "id": "[resourceId('Microsoft.Network/publicIPAddresses',variables('PublicIP'))]" },
-                            "subnet": { "id": "[variables('subnetRef')]" }
+                            "addressPrefix": "[variables('subnetPrefix')]"
                         }
                     }
                 ]
             }
         },
         {
-            "apiVersion": "2016-04-30-preview",
-            "type": "Microsoft.Compute/virtualMachines",
-            "name": "[variables('vName')]",
+            "type": "Microsoft.Network/networkInterfaces",
+            "name": "[variables('nicName')]",
+            "apiVersion": "2016-09-01",
             "location": "[variables('Location')]",
-            "dependsOn": [
-                "[resourceId('Microsoft.Network/networkInterfaces/', variables('Nic'))]"
-            ],
             "properties": {
-                "hardwareProfile": { 
+                "ipConfigurations": [
+                    {
+                        "name": "ipconfig1",
+                        "properties": {
+                            "privateIPAllocationMethod": "Dynamic",
+                            "publicIPAddress": {
+                                "id": "[resourceId('Microsoft.Network/publicIPAddresses',variables('publicIPAddressName'))]"
+                            },
+                            "subnet": {
+                                "id": "[variables('subnetRef')]"
+                            }
+                        }
+                    }
+                ]
+            },
+            "dependsOn": [
+                "[variables('publicIPAddressName')]",
+                "[variables('virtualNetworkName')]"
+            ]
+        },
+        {
+            "type": "Microsoft.Compute/virtualMachines",
+            "name": "[variables('vmName')]",
+            "apiVersion": "2016-04-30-preview",
+            "location": "[variables('Location')]",
+            "properties": {
+                "hardwareProfile": {
                     "vmSize": "Standard_A2"
                 },
                 "osProfile": {
-                    "computerName": "[variables('vName')]",
-                    "adminUsername": "[variables('AdminUsername')]",
-                    "adminPassword": "[variables('AdminPassword')]"
+                    "computerName": "[variables('vmName')]",
+                    "adminUsername": "[variables('adminUsername')]",
+                    "adminPassword": "[variables('adminPassword')]"
                 },
                 "storageProfile": {
                     "imageReference": {
                         "publisher": "MicrosoftWindowsServer",
                         "offer": "WindowsServer",
-                        "sku": "2016-DataCenter",
+                        "sku": "2016-Datacenter",
                         "version": "latest"
                     },
                     "osDisk": {
-                        "name": "myManagedOSDisk",
-                        "caching": "ReadWrite",
                         "createOption": "FromImage"
                     }
                 },
                 "networkProfile": {
                     "networkInterfaces": [
                         {
-                            "id": "[resourceId('Microsoft.Network/networkInterfaces',variables('Nic'))]"
+                            "id": "[resourceId('Microsoft.Network/networkInterfaces',variables('nicName'))]"
                         }
                     ]
-                },
-                "diagnosticsProfile": {
-                    "bootDiagnostics": {
-                        "enabled":true,
-                        "storageUri": "[reference(variables('StorageAccountName'), '2016-01-01').primaryEndpoints.blob]"
-                    }
                 }
             },
             "resources": [
                 {
                     "type": "extensions",
-                    "name": "[variables('DscName')]",
+                    "name": "CustomScriptExtension",
                     "apiVersion": "2016-04-30-preview",
                     "location": "[variables('Location')]",
                     "properties": {
@@ -182,17 +162,20 @@
                         "typeHandlerVersion": "1.8",
                         "autoUpgradeMinorVersion": true,
                         "settings": {
-                            "fileUris": [
-                                "https://raw.githubusercontent.com/prasanth123n/New-rdmi-saas-offering/master/Scripts/New-RdmiMgmtSetupScript.ps1"
-                            ],
-                            "commandToExecute": "[concat('powershell.exe -ExecutionPolicy Unrestricted -File New-RdmiMgmtSetupScript.ps1', ' -SubscriptionId \"', variables('SubscriptionId'), '\"',' ',  ' -ResourceGroupName \"', variables('ResourceGroup'), '\"',' ', ' -Location \"', variables('Location'), '\"',' ', ' -ApplicationID \"', parameters('ApplicationID'), '\"',' ', ' -RDBrokerURL \"', parameters('RDBrokerURL'), '\"',' ', ' -ResourceURL \"', parameters('ResourceURL'), '\"',' ',' -UserName \"', parameters('AzureLoginID'), '\"',' ',' -Password \"', parameters('AzurePassword'), '\"',' ',' -fileURI \"', variables('FileUri'), '\"')]"
+                           "fileUris": [
+                            "https://raw.githubusercontent.com/phanikumarsharma/rdmisaasofferingtemplate/master/scripts/New-RdmiMgmtSetup.ps1"
+                        ],
+                        "commandToExecute": "[concat('powershell.exe -ExecutionPolicy Unrestricted -File New-RdmiMgmtSetup.ps1', ' -SubscriptionId \"', variables('subscriptionId'), '\"',' ', ' -ResourceGroupName \"', variables('resourcegroupname'), '\"',' ', ' -Location \"', variables('Location'), '\"',' ', ' -ApplicationID \"', parameters('ApplicationID'), '\"',' ', ' -RDBrokerURL \"', parameters('RDBrokerURL'), '\"',' ', ' -ResourceURL \"', parameters('ResourceURL'), '\"',' ',' -UserName \"', parameters('AzureLoginID'), '\"',' ',' -Password \"', parameters('AzureLoginPassword'), '\"',' ',' -fileURI \"', variables('FileURI'), '\"')]"
                         }
                     },
                     "dependsOn": [
-                        "[variables('vName')]"
+                        "[variables('vmName')]"
                     ]
                 }
+            ],
+            "dependsOn": [
+                "[variables('nicName')]"
             ]
         }
     ]
-}
+ }
