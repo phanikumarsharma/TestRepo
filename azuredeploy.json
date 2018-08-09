@@ -2,6 +2,13 @@
     "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
     "contentVersion": "1.0.0.0",
     "parameters": {
+    "ResourceGroup":
+      {
+        "type": "string",
+        "metadata": {
+          "description":"Provide Unique Resource Group name"
+        }
+      },
       "ApplicationID":
       {
         "type": "string",
@@ -54,7 +61,7 @@
         "_artifactsLocation": "https://raw.githubusercontent.com/phanikumarsharma/rdmisaasofferingtemplate/master/scripts/",
         "adminUsername": "vmadmin",
         "adminPassword": "keepcalm@123",
-        "resourcegroupname": "[resourceGroup().name]",
+        "RGName": "[resourceGroup().name]",
         "FileURI": "[concat(variables('_artifactsLocation'),'/msft-rdmi-saas-offering.zip')]"
     },
     "resources": [
@@ -165,7 +172,7 @@
                            "fileUris": [
                             "https://raw.githubusercontent.com/phanikumarsharma/rdmisaasofferingtemplate/master/scripts/New-RdmiMgmtSetup.ps1"
                         ],
-                        "commandToExecute": "[concat('powershell.exe -ExecutionPolicy Unrestricted -File New-RdmiMgmtSetup.ps1', ' -SubscriptionId \"', variables('subscriptionId'), '\"',' ',  ' -ResourceGroupName \"', variables('resourcegroupname'), '\"',' ', ' -Location \"', variables('Location'), '\"',' ', ' -ApplicationID \"', parameters('ApplicationID'), '\"',' ', ' -RDBrokerURL \"', parameters('RDBrokerURL'), '\"',' ', ' -ResourceURL \"', parameters('ResourceURL'), '\"',' ',' -UserName \"', parameters('AzureLoginID'), '\"',' ',' -Password \"', parameters('AzureLoginPassword'), '\"',' ',' -fileURI \"', variables('FileURI'), '\"')]"
+                        "commandToExecute": "[concat('powershell.exe -ExecutionPolicy Unrestricted -File New-RdmiMgmtSetup.ps1', ' -SubscriptionId \"', variables('subscriptionId'), '\"',' ', ' -ResourceGroupName \"', parameters('ResourceGroup'), '\"',' ', ' -Location \"', variables('Location'), '\"',' ', ' -ApplicationID \"', parameters('ApplicationID'), '\"',' ', ' -RDBrokerURL \"', parameters('RDBrokerURL'), '\"',' ', ' -ResourceURL \"', parameters('ResourceURL'), '\"',' ',' -UserName \"', parameters('AzureLoginID'), '\"',' ',' -Password \"', parameters('AzureLoginPassword'), '\"',' ',' -fileURI \"', variables('FileURI'), '\"',' ',' -RGName \"', variables('RGName'), '\"')]"
                         }
                     },
                     "dependsOn": [
