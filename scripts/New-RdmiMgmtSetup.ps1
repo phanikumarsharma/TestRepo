@@ -376,7 +376,27 @@ try
             Write-Output "Web URL : https://$WebUrl"
        }
      }
+     New-PSDrive -Name RemoveRG -PSProvider FileSystem -Root "C:\msft-rdmi-saas-offering\msft-rdmi-saas-offering" | Out-Null
+@"
+<RemoveRG>
+<SubscriptionId>$SubscriptionId</SubscriptionId>
+<UserName>$UserName</UserName>
+<Password>$Password</Password>
+<ResourceGroupName>$ResourceGroupName</ResourceGroupName>
+</RemoveRG>
+"@| Out-File -FilePath RemoveRG:\RemoveRG.xml -Force
+
+     $jobname = "RemoveResourceGroup"
+     $script =  "C:\msft-rdmi-saas-offering\msft-rdmi-saas-offering\RemoveRG.ps1"
+     $repeat = (New-TimeSpan -Minutes 1)
+     $action = New-ScheduledTaskAction –Execute "$pshome\powershell.exe" -Argument  "-ExecutionPolicy Bypass -Command ${script}"
+     $duration = (New-TimeSpan -Days 1)
+     $trigger = New-ScheduledTaskTrigger -Once -At (Get-Date).Date -RepetitionInterval $repeat -RepetitionDuration $duration
+     $settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -StartWhenAvailable -RunOnlyIfNetworkAvailable -DontStopOnIdleEnd
+     Register-ScheduledTask -TaskName $jobname -Action $action -Trigger $trigger -RunLevel Highest -User "system" -Settings $settings
+
    }
+
 catch [Exception]
 {
     Write-Output $_.Exception.Message
