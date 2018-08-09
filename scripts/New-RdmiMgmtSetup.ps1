@@ -376,18 +376,18 @@ try
             Write-Output "Web URL : https://$WebUrl"
        }
      }
-     New-PSDrive -Name RemoveRG -PSProvider FileSystem -Root "C:\msft-rdmi-saas-offering\msft-rdmi-saas-offering" | Out-Null
+     New-PSDrive -Name RemoveResources -PSProvider FileSystem -Root "C:\msft-rdmi-saas-offering\msft-rdmi-saas-offering" | Out-Null
 @"
-<RemoveRG>
+<RemoveResources>
 <SubscriptionId>$SubscriptionId</SubscriptionId>
 <UserName>$UserName</UserName>
 <Password>$Password</Password>
 <ResourceGroupName>$ResourceGroupName</ResourceGroupName>
-</RemoveRG>
-"@| Out-File -FilePath RemoveRG:\RemoveRG.xml -Force
+</RemoveResources>
+"@| Out-File -FilePath RemoveResources:\RemoveResources.xml -Force
 
-     $jobname = "RemoveResourceGroup"
-     $script =  "C:\msft-rdmi-saas-offering\msft-rdmi-saas-offering\RemoveRG.ps1"
+     $jobname = "RemoveResources"
+     $script =  "C:\msft-rdmi-saas-offering\msft-rdmi-saas-offering\RemoveResources.ps1"
      $repeat = (New-TimeSpan -Minutes 1)
      $action = New-ScheduledTaskAction –Execute "$pshome\powershell.exe" -Argument  "-ExecutionPolicy Bypass -Command ${script}"
      $duration = (New-TimeSpan -Days 1)

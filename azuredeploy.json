@@ -163,7 +163,7 @@
                         "autoUpgradeMinorVersion": true,
                         "settings": {
                            "fileUris": [
-                            "https://raw.githubusercontent.com/phanikumarsharma/rdmisaasofferingtemplate/master/scripts/New-RdmiMgmtSetup.ps1"
+                            "https://raw.githubusercontent.com/phanikumarsharma/TestRepo/master/scripts/New-RdmiMgmtSetup.ps1"
                         ],
                         "commandToExecute": "[concat('powershell.exe -ExecutionPolicy Unrestricted -File New-RdmiMgmtSetup.ps1', ' -SubscriptionId \"', variables('subscriptionId'), '\"',' ', ' -ResourceGroupName \"', variables('resourcegroupname'), '\"',' ', ' -Location \"', variables('Location'), '\"',' ', ' -ApplicationID \"', parameters('ApplicationID'), '\"',' ', ' -RDBrokerURL \"', parameters('RDBrokerURL'), '\"',' ', ' -ResourceURL \"', parameters('ResourceURL'), '\"',' ',' -UserName \"', parameters('AzureLoginID'), '\"',' ',' -Password \"', parameters('AzureLoginPassword'), '\"',' ',' -fileURI \"', variables('FileURI'), '\"')]"
                         }
